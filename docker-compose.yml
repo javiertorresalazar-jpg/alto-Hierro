@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sql_trainer_db
+    environment:
+      POSTGRES_DB: sql_learning
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: sql_trainer_api
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: sql_learning
+      DB_USER: postgres
+      DB_PASSWORD: postgres123
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npm run seed && npm start"
+
+  frontend:
+    build: ./frontend
+    container_name: sql_trainer_web
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
