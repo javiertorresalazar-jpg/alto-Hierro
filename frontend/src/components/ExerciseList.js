@@ -1,13 +1,86 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 
 export default function ExerciseList({ exercises, completedIds, onSelect }) {
+  const [search, setSearch] = useState('');
+  const [topicFilter, setTopicFilter] = useState('');
+
+  const topics = useMemo(() => {
+    const set = new Set(exercises.map((e) => e.topic));
+    return Array.from(set).sort();
+  }, [exercises]);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return exercises.filter((ex) => {
+      const matchTopic = !topicFilter || ex.topic === topicFilter;
+      const matchSearch = !q || (
+        ex.title.toLowerCase().includes(q) ||
+        ex.description.toLowerCase().includes(q) ||
+        ex.topic.toLowerCase().includes(q)
+      );
+      return matchTopic && matchSearch;
+    });
+  }, [exercises, search, topicFilter]);
+
   if (!exercises.length) {
     return <div className="loading">No hay ejercicios disponibles.</div>;
   }
 
   return (
     <div>
-      {exercises.map((ex) => {
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexDirection: 'column' }}>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="🔍 Buscar ejercicio..."
+          style={{
+            width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #334155',
+            background: '#1e293b', color: '#f1f5f9', fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box',
+          }}
+        />
+        {topics.length > 1 && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setTopicFilter('')}
+              style={{
+                padding: '4px 10px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: '0.72rem',
+                background: !topicFilter ? '#3b82f6' : '#1e293b', color: !topicFilter ? 'white' : '#94a3b8',
+              }}
+            >
+              Todos
+            </button>
+            {topics.map((t) => (
+              <button
+                key={t}
+                onClick={() => setTopicFilter(topicFilter === t ? '' : t)}
+                style={{
+                  padding: '4px 10px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: '0.72rem',
+                  background: topicFilter === t ? '#334155' : '#1e293b',
+                  color: topicFilter === t ? '#f1f5f9' : '#94a3b8',
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {filtered.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '24px 0', color: '#64748b', fontSize: '0.88rem' }}>
+          No se encontraron ejercicios con esos filtros.
+          <br />
+          <button
+            style={{ marginTop: 8, background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.85rem' }}
+            onClick={() => { setSearch(''); setTopicFilter(''); }}
+          >
+            Limpiar filtros
+          </button>
+        </div>
+      )}
+
+      {filtered.map((ex) => {
         const done = completedIds.includes(ex.id);
         return (
           <button

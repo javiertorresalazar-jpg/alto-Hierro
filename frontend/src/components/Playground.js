@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import SqlEditor from './SqlEditor';
 import ResultsTable from './ResultsTable';
+import ResultChart from './ResultChart';
 import { formatSql } from '../utils/sqlTools';
 import { explainSqlError } from '../data/sqlErrors';
 import useQueryHistory from '../hooks/useQueryHistory';
@@ -17,6 +18,7 @@ export default function Playground({ scenario }) {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [activeTab, setActiveTab] = useState('tabla');
   const { history, add, clear } = useQueryHistory();
 
   const run = async () => {
@@ -35,6 +37,7 @@ export default function Playground({ scenario }) {
         setError(explainSqlError(data.error) || data.error);
       } else {
         setResult(data);
+        setActiveTab('tabla');
         add(sql, scenario);
       }
     } catch {
@@ -94,7 +97,29 @@ export default function Playground({ scenario }) {
 
       {result && (
         <div style={{ marginTop: 12 }}>
-          <ResultsTable fields={result.fields} rows={result.rows} rowCount={result.rowCount} filename={`${scenario}.csv`} />
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            {['tabla', 'grafico'].map((t) => (
+              <button
+                key={t}
+                onClick={() => setActiveTab(t)}
+                style={{
+                  padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: '0.8rem',
+                  background: activeTab === t ? '#3b82f6' : '#334155', color: 'white',
+                }}
+              >
+                {t === 'tabla' ? '📊 Tabla' : '📈 Gráfico'}
+              </button>
+            ))}
+          </div>
+          {activeTab === 'tabla' && (
+            <ResultsTable fields={result.fields} rows={result.rows} rowCount={result.rowCount} filename={`${scenario}.csv`} />
+          )}
+          {activeTab === 'grafico' && (
+            <div className="card">
+              <ResultChart rows={result.rows} fields={result.fields} />
+              {!result.rows.length && <div style={{ color: '#64748b', fontSize: '0.82rem' }}>Sin datos para graficar.</div>}
+            </div>
+          )}
         </div>
       )}
     </div>

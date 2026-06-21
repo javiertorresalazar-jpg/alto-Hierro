@@ -6,6 +6,7 @@ const exercises = [
     description: 'Muestra el nombre, apellido y especialidad de todos los médicos, ordenados por apellido.',
     hint: 'SELECT de tres columnas + ORDER BY last_name.',
     solution: 'SELECT first_name, last_name, specialty FROM doctors ORDER BY last_name;',
+    explanation: 'SELECT de tres columnas concretas solo devuelve esos campos, no toda la tabla. ORDER BY last_name ordena alfabéticamente por apellido. Sin ASC/DESC PostgreSQL usa ASC por defecto (A antes que Z).',
     topic: 'SELECT + ORDER BY',
   },
   {
@@ -14,6 +15,7 @@ const exercises = [
     description: 'Lista los médicos con salario superior a 70000, del que más gana al que menos.',
     hint: 'WHERE salary > 70000 y ORDER BY salary DESC.',
     solution: 'SELECT first_name, last_name, salary FROM doctors WHERE salary > 70000 ORDER BY salary DESC;',
+    explanation: 'WHERE salary > 70000 filtra solo los médicos con salario estrictamente mayor a 70.000. ORDER BY salary DESC ordena de mayor a menor (DESC = descendente). El resultado muestra primero el médico mejor pagado.',
     topic: 'WHERE + ORDER BY',
   },
   {
@@ -22,6 +24,7 @@ const exercises = [
     description: 'Muestra el nombre y apellido de los pacientes que viven en Madrid.',
     hint: "Filtra con WHERE city = 'Madrid'.",
     solution: "SELECT first_name, last_name FROM patients WHERE city = 'Madrid' ORDER BY last_name;",
+    explanation: "WHERE city = 'Madrid' compara texto exacto. En PostgreSQL la comparación distingue mayúsculas/minúsculas: 'Madrid' ≠ 'madrid'. Para una búsqueda insensible a mayúsculas podrías usar ILIKE 'madrid' o LOWER(city) = 'madrid'.",
     topic: 'WHERE con texto',
   },
   {
@@ -30,6 +33,7 @@ const exercises = [
     description: 'Muestra cada médico junto al nombre de su departamento.',
     hint: 'JOIN entre doctors y departments usando department_id.',
     solution: 'SELECT d.first_name, d.last_name, dep.name AS departamento FROM doctors d JOIN departments dep ON d.department_id = dep.id ORDER BY dep.name, d.last_name;',
+    explanation: 'JOIN une cada médico con su departamento comparando department_id (clave foránea en doctors) con id (clave primaria en departments). Los alias d y dep hacen la consulta más legible. AS departamento renombra dep.name en el resultado.',
     topic: 'JOIN',
   },
   {
@@ -38,6 +42,7 @@ const exercises = [
     description: 'Cuenta cuántas citas hay de cada estado (programada, completada, cancelada).',
     hint: 'Agrupa por status y usa COUNT(*).',
     solution: 'SELECT status, COUNT(*) AS total FROM appointments GROUP BY status ORDER BY total DESC, status;',
+    explanation: 'GROUP BY status crea un grupo por cada valor distinto de estado. COUNT(*) cuenta las citas en cada grupo. No se necesita JOIN porque toda la información está en la tabla appointments. ORDER BY total DESC muestra primero el estado más frecuente.',
     topic: 'GROUP BY + COUNT',
   },
   {
@@ -46,6 +51,7 @@ const exercises = [
     description: 'Muestra cada departamento con cuántos médicos tiene.',
     hint: 'LEFT JOIN departments con doctors, agrupa por departamento.',
     solution: 'SELECT dep.name, COUNT(d.id) AS medicos FROM departments dep LEFT JOIN doctors d ON dep.id = d.department_id GROUP BY dep.id, dep.name ORDER BY medicos DESC, dep.name;',
+    explanation: 'LEFT JOIN de departments con doctors garantiza que aparezcan TODOS los departamentos, incluso los que no tienen ningún médico asignado (COUNT devolverá 0 para ellos). Con JOIN normal los departamentos vacíos desaparecerían.',
     topic: 'LEFT JOIN + GROUP BY',
   },
   {
@@ -54,6 +60,7 @@ const exercises = [
     description: 'Muestra los 3 médicos que tienen más citas asignadas.',
     hint: 'JOIN doctors con appointments, cuenta por médico y ordena descendente con LIMIT 3.',
     solution: 'SELECT d.first_name, d.last_name, COUNT(a.id) AS citas FROM doctors d JOIN appointments a ON d.id = a.doctor_id GROUP BY d.id, d.first_name, d.last_name ORDER BY citas DESC, d.last_name LIMIT 3;',
+    explanation: 'COUNT(a.id) cuenta las citas de cada médico. GROUP BY d.id agrupa por médico (incluir first_name y last_name en GROUP BY es necesario porque no son funciones de agregación). ORDER BY citas DESC + LIMIT 3 selecciona el "podio" de médicos más ocupados.',
     topic: 'COUNT + GROUP BY + LIMIT',
   },
   {
@@ -62,6 +69,7 @@ const exercises = [
     description: 'Calcula el salario promedio de los médicos de cada departamento, de mayor a menor.',
     hint: 'JOIN departments con doctors, agrupa y usa ROUND(AVG(salary), 2).',
     solution: 'SELECT dep.name, ROUND(AVG(d.salary), 2) AS salario_medio FROM departments dep JOIN doctors d ON dep.id = d.department_id GROUP BY dep.name ORDER BY salario_medio DESC;',
+    explanation: 'AVG(d.salary) calcula la media de salarios de todos los médicos de cada departamento. ROUND(..., 2) la redondea a 2 decimales para mayor legibilidad. ORDER BY salario_medio DESC ordena del departamento mejor remunerado al peor.',
     topic: 'AVG + GROUP BY',
   },
   {
@@ -70,6 +78,7 @@ const exercises = [
     description: 'Encuentra los pacientes que no tienen ninguna cita registrada.',
     hint: 'LEFT JOIN patients con appointments y filtra donde la cita es NULL.',
     solution: 'SELECT p.first_name, p.last_name, p.city FROM patients p LEFT JOIN appointments a ON p.id = a.patient_id WHERE a.id IS NULL ORDER BY p.last_name;',
+    explanation: 'LEFT JOIN incluye todos los pacientes. Donde no hay cita, appointments aporta NULLs. WHERE a.id IS NULL aísla exactamente esos pacientes sin citas. Este patrón (LEFT JOIN + IS NULL en la clave de la tabla derecha) es la forma estándar de detectar registros sin relación.',
     topic: 'LEFT JOIN + IS NULL',
   },
 ];

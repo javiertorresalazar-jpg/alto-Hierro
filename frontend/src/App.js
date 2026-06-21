@@ -8,7 +8,9 @@ import ProgressPanel from './components/ProgressPanel';
 import Welcome from './components/Welcome';
 import ScenarioSelector from './components/ScenarioSelector';
 import Playground from './components/Playground';
-import useGameState, { getRank } from './hooks/useGameState';
+import DailyChallenge from './components/DailyChallenge';
+import LearningPaths from './components/LearningPaths';
+import useGameState, { getRank, getDailyExerciseId } from './hooks/useGameState';
 import './App.css';
 
 export default function App() {
@@ -20,12 +22,17 @@ export default function App() {
   const [scenario, setScenario] = useState(() => localStorage.getItem('scenario') || 'tienda');
   const [scenarios, setScenarios] = useState([]);
   const [exercises, setExercises] = useState([]);
+  const [allExercises, setAllExercises] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const { state, recordCompletion } = useGameState();
+  const { state, recordCompletion, setDailyExercise } = useGameState();
 
   useEffect(() => {
     fetch('/api/scenarios').then((r) => r.json()).then(setScenarios).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/exercises').then((r) => r.json()).then(setAllExercises).catch(() => {});
   }, []);
 
   const fetchExercises = useCallback(async () => {
@@ -42,6 +49,16 @@ export default function App() {
 
   useEffect(() => { fetchExercises(); }, [fetchExercises]);
 
+  const dailyExercise = allExercises.length > 0
+    ? allExercises.find((e) => e.id === getDailyExerciseId(allExercises))
+    : null;
+
+  useEffect(() => {
+    if (dailyExercise) setDailyExercise(dailyExercise.id);
+  }, [dailyExercise?.id]);
+
+  const isDailyDone = state.dailyDate === new Date().toISOString().slice(0, 10) && state.dailyDone;
+
   const changeScenario = (id) => {
     setScenario(id);
     localStorage.setItem('scenario', id);
@@ -54,12 +71,20 @@ export default function App() {
     { key: 'avanzado', label: 'Avanzado', color: '#ef4444' },
   ];
 
+  const isLevelLocked = (levelKey) => {
+    if (levelKey === 'basico') return false;
+    if (levelKey === 'intermedio') return state.byLevel.basico < 5;
+    if (levelKey === 'avanzado') return state.byLevel.intermedio < 5;
+    return false;
+  };
+
   const TABS = [
     { key: 'inicio', label: 'Inicio', icon: '🏠' },
     { key: 'ejercicios', label: 'Ejercicios', icon: '📝' },
+    { key: 'rutas', label: 'Rutas', icon: '🗺️' },
     { key: 'libre', label: 'Modo libre', icon: '🧪' },
     { key: 'ayuda', label: 'Ayuda', icon: '📖' },
-    { key: 'esquema', label: 'Base de Datos', icon: '🗄️' },
+    { key: 'esquema', label: 'BD', icon: '🗄️' },
   ];
 
   const goToExercises = () => {
@@ -115,19 +140,55 @@ export default function App() {
           <>
             <ScenarioSelector scenarios={scenarios} value={scenario} onChange={changeScenario} />
             <ProgressPanel state={state} />
+
+            {dailyExercise && (
+              <DailyChallenge
+                exercise={dailyExercise}
+                completed={isDailyDone}
+                onSelect={(ex) => {
+                  const sc = ex.scenario || 'tienda';
+                  if (sc !== scenario) changeScenario(sc);
+                  setSelectedExercise(ex);
+                }}
+              />
+            )}
+
             <div className="level-selector">
-              {LEVELS.map((l) => (
-                <button
-                  key={l.key}
-                  className={`level-btn ${level === l.key ? 'active' : ''}`}
-                  style={{ '--level-color': l.color }}
-                  onClick={() => setLevel(l.key)}
-                >
-                  {l.label}
-                </button>
-              ))}
+              {LEVELS.map((l) => {
+                const locked = isLevelLocked(l.key);
+                return (
+                  <button
+                    key={l.key}
+                    className={`level-btn ${level === l.key ? 'active' : ''}`}
+                    style={{ '--level-color': l.color, opacity: locked ? 0.5 : 1 }}
+                    onClick={() => {
+                      if (locked) return;
+                      setLevel(l.key);
+                    }}
+                    title={
+                      locked
+                        ? l.key === 'intermedio'
+                          ? `Completa 5 ejercicios básicos para desbloquear (${state.byLevel.basico}/5)`
+                          : `Completa 5 ejercicios intermedios para desbloquear (${state.byLevel.intermedio}/5)`
+                        : undefined
+                    }
+                  >
+                    {locked ? '🔒 ' : ''}{l.label}
+                    {locked && (
+                      <span style={{ fontSize: '0.65rem', display: 'block', lineHeight: 1 }}>
+                        {l.key === 'intermedio' ? `${state.byLevel.basico}/5` : `${state.byLevel.intermedio}/5`}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            {loading ? (
+
+            {isLevelLocked(level) ? (
+              <div className="feedback info" style={{ textAlign: 'center', marginTop: 12 }}>
+                🔒 Completa más ejercicios del nivel anterior para desbloquear este nivel.
+              </div>
+            ) : loading ? (
               <div className="loading">Cargando ejercicios...</div>
             ) : (
               <ExerciseList
@@ -140,6 +201,26 @@ export default function App() {
         )}
 
         {tab === 'ejercicios' && selectedExercise && (
+          <ExerciseEditor
+            exercise={selectedExercise}
+            onBack={() => setSelectedExercise(null)}
+            onComplete={() => recordCompletion(selectedExercise)}
+            isCompleted={state.completed.includes(selectedExercise.id)}
+          />
+        )}
+
+        {tab === 'rutas' && !selectedExercise && (
+          <LearningPaths
+            completedIds={state.completed}
+            allExercises={allExercises}
+            onSelectExercise={(ex) => {
+              setSelectedExercise(ex);
+            }}
+            onChangeScenario={changeScenario}
+          />
+        )}
+
+        {tab === 'rutas' && selectedExercise && (
           <ExerciseEditor
             exercise={selectedExercise}
             onBack={() => setSelectedExercise(null)}

@@ -6,6 +6,7 @@ const exercises = [
     description: 'Muestra el título y el año de publicación de todos los libros, ordenados por año.',
     hint: 'SELECT de dos columnas + ORDER BY year.',
     solution: 'SELECT title, year FROM books ORDER BY year, title;',
+    explanation: 'ORDER BY year, title ordena primero por año de publicación; cuando hay varios libros del mismo año (empate), los ordena por título. Así el resultado es completamente predecible y fácil de leer.',
     topic: 'SELECT + ORDER BY',
   },
   {
@@ -14,6 +15,7 @@ const exercises = [
     description: 'Lista los libros publicados después del año 1980.',
     hint: 'Usa WHERE year > 1980.',
     solution: 'SELECT title, year FROM books WHERE year > 1980 ORDER BY year, title;',
+    explanation: 'WHERE year > 1980 filtra fila a fila: solo pasan los libros cuyo año de publicación sea estrictamente mayor que 1980. El motor evalúa la condición para cada fila antes de incluirla en el resultado.',
     topic: 'WHERE',
   },
   {
@@ -22,6 +24,7 @@ const exercises = [
     description: 'Muestra el nombre y apellido de los socios que viven en Madrid.',
     hint: "Filtra con WHERE city = 'Madrid'.",
     solution: "SELECT first_name, last_name FROM members WHERE city = 'Madrid' ORDER BY last_name;",
+    explanation: "La comparación de texto con = es exacta y sensible a mayúsculas en PostgreSQL. 'Madrid' y 'madrid' son valores diferentes. ORDER BY last_name ordena los socios alfabéticamente por apellido.",
     topic: 'WHERE con texto',
   },
   {
@@ -30,6 +33,7 @@ const exercises = [
     description: 'Muestra el título de cada libro junto al nombre de su autor.',
     hint: 'JOIN entre books y authors usando author_id.',
     solution: 'SELECT b.title, a.name AS autor FROM books b JOIN authors a ON b.author_id = a.id ORDER BY b.title;',
+    explanation: 'JOIN (INNER JOIN) une cada libro con su autor buscando el registro de authors cuyo id coincide con el author_id del libro. El alias AS autor renombra la columna a.name en el resultado. Solo aparecen libros que tienen un autor registrado.',
     topic: 'JOIN',
   },
   {
@@ -38,6 +42,7 @@ const exercises = [
     description: 'Cuenta cuántos libros hay de cada género, de mayor a menor.',
     hint: 'Agrupa por genre y usa COUNT(*).',
     solution: 'SELECT genre, COUNT(*) AS total FROM books GROUP BY genre ORDER BY total DESC, genre;',
+    explanation: 'GROUP BY genre crea un grupo por cada valor distinto de género. COUNT(*) cuenta cuántos libros hay en cada grupo. ORDER BY total DESC los ordena de más a menos; genre como segundo criterio ordena alfabéticamente los posibles empates.',
     topic: 'GROUP BY + COUNT',
   },
   {
@@ -46,6 +51,7 @@ const exercises = [
     description: 'Muestra los socios que tienen préstamos activos y cuántos tiene cada uno.',
     hint: "JOIN members con loans filtrando status = 'activo', agrupa por socio.",
     solution: "SELECT m.first_name, m.last_name, COUNT(l.id) AS activos FROM members m JOIN loans l ON m.id = l.member_id WHERE l.status = 'activo' GROUP BY m.id, m.first_name, m.last_name ORDER BY activos DESC, m.last_name;",
+    explanation: "WHERE l.status = 'activo' filtra antes del agrupamiento, quedándose solo con los préstamos activos. Luego GROUP BY agrupa por socio y COUNT cuenta cuántos préstamos activos tiene cada uno. Solo aparecen socios con al menos un préstamo activo.",
     topic: 'JOIN + GROUP BY',
   },
   {
@@ -54,6 +60,7 @@ const exercises = [
     description: 'Muestra los 3 libros que más veces se han prestado.',
     hint: 'JOIN books con loans, cuenta los préstamos por libro y ordena descendente con LIMIT 3.',
     solution: 'SELECT b.title, COUNT(l.id) AS veces_prestado FROM books b JOIN loans l ON b.id = l.book_id GROUP BY b.id, b.title ORDER BY veces_prestado DESC, b.title LIMIT 3;',
+    explanation: 'COUNT(l.id) cuenta los préstamos de cada libro. GROUP BY b.id, b.title agrupa por libro (se incluye id para evitar ambigüedad si dos libros tienen el mismo título). ORDER BY veces_prestado DESC pone los más prestados primero. LIMIT 3 corta el resultado en los tres primeros.',
     topic: 'COUNT + GROUP BY + LIMIT',
   },
   {
@@ -62,6 +69,7 @@ const exercises = [
     description: 'Encuentra los socios que no tienen ningún préstamo registrado.',
     hint: 'LEFT JOIN de members con loans y filtra donde el préstamo es NULL.',
     solution: 'SELECT m.first_name, m.last_name, m.email FROM members m LEFT JOIN loans l ON m.id = l.member_id WHERE l.id IS NULL ORDER BY m.last_name;',
+    explanation: 'LEFT JOIN incluye TODOS los socios aunque no tengan préstamos. Cuando no existe préstamo, la tabla loans aporta NULLs en todas sus columnas. WHERE l.id IS NULL selecciona exactamente esos socios sin préstamos. Este patrón LEFT JOIN + IS NULL es la forma clásica de encontrar "huérfanos".',
     topic: 'LEFT JOIN + IS NULL',
   },
   {
@@ -70,6 +78,7 @@ const exercises = [
     description: 'Muestra los autores que tienen más de un libro en el catálogo, con cuántos tienen.',
     hint: 'JOIN authors con books, agrupa por autor y filtra con HAVING COUNT > 1.',
     solution: 'SELECT a.name, COUNT(b.id) AS libros FROM authors a JOIN books b ON a.id = b.author_id GROUP BY a.id, a.name HAVING COUNT(b.id) > 1 ORDER BY libros DESC, a.name;',
+    explanation: 'HAVING filtra grupos DESPUÉS del agrupamiento, a diferencia de WHERE que filtra filas antes. No se puede usar WHERE aquí porque la condición (COUNT > 1) depende del resultado del GROUP BY. HAVING COUNT(b.id) > 1 descarta los autores con un solo libro.',
     topic: 'HAVING',
   },
 ];

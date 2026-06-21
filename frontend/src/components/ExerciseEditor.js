@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import SqlEditor from './SqlEditor';
 import ResultDiff from './ResultDiff';
+import ResultChart from './ResultChart';
 import { getTheory } from '../data/theory';
 import { explainSqlError } from '../data/sqlErrors';
 import { formatSql } from '../utils/sqlTools';
@@ -94,10 +95,13 @@ export default function ExerciseEditor({ exercise, onBack, onComplete, isComplet
     setSolution(data.solution);
   };
 
+  const hasChart = result && result.rows && result.rows.length > 0;
+
   const tabs = [
     { key: 'editor', label: '✏️ Editor' },
     { key: 'resultado', label: `📊 Resultado${result ? ` (${result.rowCount})` : ''}` },
   ];
+  if (hasChart) tabs.push({ key: 'grafico', label: '📈 Gráfico' });
   if (diff) tabs.push({ key: 'comparar', label: '🔍 Comparar' });
 
   return (
@@ -140,6 +144,7 @@ export default function ExerciseEditor({ exercise, onBack, onComplete, isComplet
           <div style={{ fontSize: '1.5rem' }}>🎉</div>
           <div style={{ flex: 1 }}>
             <strong>+{reward.xpGained} XP</strong>
+            {reward.isDaily && <span style={{ color: '#fbbf24' }}> · ⚡ ¡Reto del día! (2×)</span>}
             {reward.leveledUp && <span> · ¡Subiste de rango! 🆙</span>}
             {reward.newBadges.length > 0 && (
               <div style={{ fontSize: '0.78rem', marginTop: 4 }}>
@@ -198,6 +203,19 @@ export default function ExerciseEditor({ exercise, onBack, onComplete, isComplet
               <button className="btn btn-ghost btn-sm" style={{ marginTop: 6 }} onClick={() => setSql(solution)}>
                 Copiar al editor
               </button>
+              {exercise.explanation && (
+                <div style={{
+                  marginTop: 10, padding: '10px 14px', background: '#0f2a1e',
+                  borderLeft: '3px solid #10b981', borderRadius: 6,
+                }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#4ade80', marginBottom: 4 }}>
+                    💡 ¿Por qué funciona?
+                  </div>
+                  <p style={{ fontSize: '0.82rem', color: '#86efac', lineHeight: 1.6, margin: 0 }}>
+                    {exercise.explanation}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -234,6 +252,12 @@ export default function ExerciseEditor({ exercise, onBack, onComplete, isComplet
             </>
           )}
         </>
+      )}
+
+      {activeTab === 'grafico' && result && (
+        <div className="card">
+          <ResultChart rows={result.rows} fields={result.fields} />
+        </div>
       )}
 
       {activeTab === 'comparar' && diff && <ResultDiff {...diff} />}

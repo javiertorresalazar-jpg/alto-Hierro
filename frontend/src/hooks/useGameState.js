@@ -35,6 +35,12 @@ function load() {
   }
 }
 
+export function getDailyExerciseId(exercises) {
+  if (!exercises || exercises.length === 0) return null;
+  const dayNum = Math.floor(Date.now() / 86400000);
+  return exercises[dayNum % exercises.length].id;
+}
+
 export function getRank(xp) {
   let current = RANKS[0];
   let next = null;
@@ -57,6 +63,8 @@ export default function useGameState() {
       streak: saved.streak || 0,
       lastDay: saved.lastDay || null,
       badges: saved.badges || [],
+      dailyDate: saved.dailyDate || null,
+      dailyDone: saved.dailyDone || false,
     };
   });
 
@@ -71,11 +79,13 @@ export default function useGameState() {
       return { xpGained: 0, newBadges: [], leveledUp: false, alreadyDone: true };
     }
 
-    const xpGained = XP_BY_LEVEL[exercise.level] || 10;
+    const today = todayStr();
+    const isDaily = state.dailyDate === today && !state.dailyDone;
+    const baseXp = XP_BY_LEVEL[exercise.level] || 10;
+    const xpGained = isDaily ? baseXp * 2 : baseXp;
     const newXp = state.xp + xpGained;
 
     // Calcular racha
-    const today = todayStr();
     let streak = state.streak;
     if (state.lastDay !== today) {
       const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
@@ -88,6 +98,8 @@ export default function useGameState() {
       [exercise.level]: (state.byLevel[exercise.level] || 0) + 1,
     };
 
+    const isDailyExercise = state.dailyDate === today && !state.dailyDone;
+
     const candidate = {
       xp: newXp,
       completed: [...state.completed, exercise.id],
@@ -95,6 +107,8 @@ export default function useGameState() {
       streak,
       lastDay: today,
       badges: state.badges,
+      dailyDate: state.dailyDate,
+      dailyDone: isDailyExercise ? true : state.dailyDone,
     };
 
     // Comprobar medallas nuevas
@@ -106,8 +120,15 @@ export default function useGameState() {
     const leveledUp = getRank(newXp).current.name !== getRank(state.xp).current.name;
 
     persist(candidate);
-    return { xpGained, newBadges, leveledUp, alreadyDone: false };
+    return { xpGained, newBadges, leveledUp, alreadyDone: false, isDaily: isDailyExercise };
   }, [state]);
 
-  return { state, recordCompletion };
+  const setDailyExercise = useCallback((exerciseId) => {
+    const today = todayStr();
+    if (state.dailyDate === today) return;
+    const next = { ...state, dailyDate: today, dailyDone: false };
+    persist(next);
+  }, [state]);
+
+  return { state, recordCompletion, setDailyExercise };
 }
