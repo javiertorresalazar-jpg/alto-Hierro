@@ -20,11 +20,15 @@ export default function SchemaViewer() {
     fetch('/api/schema')
       .then((r) => r.json())
       .then((data) => {
-        setSchema(data);
-        const firstKey = Object.keys(data)[0];
+        if (data.error) { setError(data.error); return; }
+        const tables = Object.fromEntries(
+          Object.entries(data).filter(([, cols]) => Array.isArray(cols))
+        );
+        setSchema(tables);
+        const firstKey = Object.keys(tables)[0];
         if (firstKey) setOpen({ [firstKey]: true });
       })
-      .catch(() => setError('No se pudo cargar el esquema. ¿Está el servidor corriendo?'));
+      .catch((e) => setError('No se pudo conectar a la base de datos: ' + e.message));
   }, []);
 
   if (error) return <div className="feedback error">{error}</div>;
