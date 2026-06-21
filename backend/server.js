@@ -85,6 +85,8 @@ app.post('/api/check/:id', async (req, res) => {
       correct: isCorrect,
       userRows,
       userFields: userResult.fields.map((f) => f.name),
+      expectedRows: solRows,
+      expectedFields: solutionResult.fields.map((f) => f.name),
       rowCount: userResult.rowCount,
       feedback: isCorrect
         ? '¡Correcto! Tu consulta devuelve los resultados esperados.'

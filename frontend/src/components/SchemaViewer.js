@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import useSchema from '../hooks/useSchema';
 
 const TABLE_ICONS = {
   products: '📦',
@@ -12,26 +13,17 @@ const TABLE_ICONS = {
 };
 
 export default function SchemaViewer() {
-  const [schema, setSchema] = useState(null);
+  const { schema, error } = useSchema();
   const [open, setOpen] = useState({});
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('/api/schema')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.error) { setError(data.error); return; }
-        const tables = Object.fromEntries(
-          Object.entries(data).filter(([, cols]) => Array.isArray(cols))
-        );
-        setSchema(tables);
-        const firstKey = Object.keys(tables)[0];
-        if (firstKey) setOpen({ [firstKey]: true });
-      })
-      .catch((e) => setError('No se pudo conectar a la base de datos: ' + e.message));
-  }, []);
+    if (schema) {
+      const firstKey = Object.keys(schema)[0];
+      if (firstKey) setOpen((prev) => (Object.keys(prev).length ? prev : { [firstKey]: true }));
+    }
+  }, [schema]);
 
-  if (error) return <div className="feedback error">{error}</div>;
+  if (error) return <div className="feedback error">No se pudo conectar a la base de datos: {error}</div>;
   if (!schema) return <div className="loading">Cargando esquema...</div>;
 
   const toggle = (t) => setOpen((p) => ({ ...p, [t]: !p[t] }));

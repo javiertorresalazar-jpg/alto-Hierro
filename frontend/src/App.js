@@ -4,6 +4,8 @@ import ExerciseEditor from './components/ExerciseEditor';
 import CheatSheet from './components/CheatSheet';
 import SchemaViewer from './components/SchemaViewer';
 import InstallBanner from './components/InstallBanner';
+import ProgressPanel from './components/ProgressPanel';
+import useGameState, { getRank } from './hooks/useGameState';
 import './App.css';
 
 export default function App() {
@@ -12,9 +14,8 @@ export default function App() {
   const [level, setLevel] = useState('basico');
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [completedIds, setCompletedIds] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('completed') || '[]'); } catch { return []; }
-  });
+
+  const { state, recordCompletion } = useGameState();
 
   const fetchExercises = useCallback(async () => {
     try {
@@ -30,14 +31,6 @@ export default function App() {
 
   useEffect(() => { fetchExercises(); }, [fetchExercises]);
 
-  const markCompleted = (id) => {
-    setCompletedIds((prev) => {
-      const next = prev.includes(id) ? prev : [...prev, id];
-      localStorage.setItem('completed', JSON.stringify(next));
-      return next;
-    });
-  };
-
   const LEVELS = [
     { key: 'basico', label: 'Básico', color: '#10b981' },
     { key: 'intermedio', label: 'Intermedio', color: '#f59e0b' },
@@ -49,6 +42,8 @@ export default function App() {
     { key: 'ayuda', label: 'Ayuda SQL', icon: '📖' },
     { key: 'esquema', label: 'Base de Datos', icon: '🗄️' },
   ];
+
+  const rank = getRank(state.xp).current;
 
   return (
     <div className="app">
@@ -62,8 +57,8 @@ export default function App() {
             <p>PostgreSQL · Aprende con ejercicios</p>
           </div>
         </div>
-        <div className="progress-pill">
-          {completedIds.length} completados
+        <div className="progress-pill" title={`${rank.name} · ${state.xp} XP`}>
+          {rank.icon} {state.xp} XP
         </div>
       </header>
 
@@ -83,6 +78,7 @@ export default function App() {
       <main className="main">
         {tab === 'ejercicios' && !selectedExercise && (
           <>
+            <ProgressPanel state={state} />
             <div className="level-selector">
               {LEVELS.map((l) => (
                 <button
@@ -100,7 +96,7 @@ export default function App() {
             ) : (
               <ExerciseList
                 exercises={exercises}
-                completedIds={completedIds}
+                completedIds={state.completed}
                 onSelect={setSelectedExercise}
               />
             )}
@@ -111,8 +107,8 @@ export default function App() {
           <ExerciseEditor
             exercise={selectedExercise}
             onBack={() => setSelectedExercise(null)}
-            onComplete={() => markCompleted(selectedExercise.id)}
-            isCompleted={completedIds.includes(selectedExercise.id)}
+            onComplete={() => recordCompletion(selectedExercise)}
+            isCompleted={state.completed.includes(selectedExercise.id)}
           />
         )}
 
