@@ -5,11 +5,14 @@ import CheatSheet from './components/CheatSheet';
 import SchemaViewer from './components/SchemaViewer';
 import InstallBanner from './components/InstallBanner';
 import ProgressPanel from './components/ProgressPanel';
+import Welcome from './components/Welcome';
 import useGameState, { getRank } from './hooks/useGameState';
 import './App.css';
 
 export default function App() {
-  const [tab, setTab] = useState('ejercicios');
+  const [tab, setTab] = useState(() =>
+    localStorage.getItem('visited') ? 'ejercicios' : 'inicio'
+  );
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [level, setLevel] = useState('basico');
   const [exercises, setExercises] = useState([]);
@@ -38,10 +41,16 @@ export default function App() {
   ];
 
   const TABS = [
+    { key: 'inicio', label: 'Inicio', icon: '🏠' },
     { key: 'ejercicios', label: 'Ejercicios', icon: '📝' },
     { key: 'ayuda', label: 'Ayuda SQL', icon: '📖' },
     { key: 'esquema', label: 'Base de Datos', icon: '🗄️' },
   ];
+
+  const goToExercises = () => {
+    localStorage.setItem('visited', '1');
+    setTab('ejercicios');
+  };
 
   const rank = getRank(state.xp).current;
 
@@ -76,6 +85,8 @@ export default function App() {
       </nav>
 
       <main className="main">
+        {tab === 'inicio' && <Welcome onStart={goToExercises} />}
+
         {tab === 'ejercicios' && !selectedExercise && (
           <>
             <ProgressPanel state={state} />
