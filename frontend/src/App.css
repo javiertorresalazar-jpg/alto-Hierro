@@ -429,6 +429,66 @@ tr:hover td { background: rgba(59,130,246,0.05); }
   overflow: auto;
 }
 
+/* SCENARIO SELECTOR */
+.scenario-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.scenario-selector::-webkit-scrollbar { display: none; }
+.scenario-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.scenario-pill.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+.scenario-pill-icon { font-size: 1rem; }
+
+/* HISTORY */
+.history-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+.history-item code {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: #a5f3fc;
+  word-break: break-all;
+}
+.history-item:hover { border-color: var(--primary); }
+
+/* ER DIAGRAM */
+.er-scroll {
+  overflow-x: auto;
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+}
+
 /* WELCOME / INICIO */
 .welcome-hero {
   text-align: center;

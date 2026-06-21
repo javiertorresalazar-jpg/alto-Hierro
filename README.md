@@ -19,8 +19,10 @@ por nivel de dificultad, una base de datos de ejemplo y una chuleta de ayuda.
 2. En el menú lateral abre **SQL Editor** → **New query**.
 3. Abre el archivo [`supabase/setup.sql`](supabase/setup.sql) de este repo,
    copia **todo** su contenido, pégalo y pulsa **Run**.
-   (Esto crea las tablas y carga los datos de ejemplo.)
-4. Ve a **Project Settings → Database → Connection string → URI**
+   (Crea la tienda TechStore con sus datos.)
+4. Repite el paso 3 con [`supabase/setup-extra.sql`](supabase/setup-extra.sql)
+   para añadir los escenarios de **Biblioteca** y **Hospital**.
+5. Ve a **Connect** (botón arriba) → **Direct / URI**
    y copia la cadena de conexión. Sustituye `[YOUR-PASSWORD]` por la
    contraseña de tu proyecto. La necesitarás en el paso 2.
 

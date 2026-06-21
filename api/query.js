@@ -1,4 +1,4 @@
-const { getPool } = require('./_lib/db');
+const { runScenarioQuery, schemaFor } = require('./_lib/db');
 
 const BLOCKED_KEYWORDS = /\b(DROP|TRUNCATE|DELETE|INSERT|UPDATE|ALTER|CREATE|GRANT|REVOKE|EXEC|EXECUTE)\b/i;
 
@@ -7,7 +7,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Método no permitido' });
   }
 
-  const { sql } = req.body || {};
+  const { sql, scenario } = req.body || {};
   if (!sql || typeof sql !== 'string') {
     return res.status(400).json({ error: 'Consulta SQL requerida' });
   }
@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const result = await getPool().query(trimmed);
+    const result = await runScenarioQuery(schemaFor(scenario), trimmed);
     res.json({
       rows: result.rows,
       rowCount: result.rowCount,

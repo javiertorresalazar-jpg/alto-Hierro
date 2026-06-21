@@ -1,0 +1,77 @@
+// Ejercicios del escenario "biblioteca" (schema biblioteca)
+const exercises = [
+  {
+    id: 101, scenario: 'biblioteca', level: 'basico',
+    title: 'Títulos y año de los libros',
+    description: 'Muestra el título y el año de publicación de todos los libros, ordenados por año.',
+    hint: 'SELECT de dos columnas + ORDER BY year.',
+    solution: 'SELECT title, year FROM books ORDER BY year, title;',
+    topic: 'SELECT + ORDER BY',
+  },
+  {
+    id: 102, scenario: 'biblioteca', level: 'basico',
+    title: 'Libros publicados después de 1980',
+    description: 'Lista los libros publicados después del año 1980.',
+    hint: 'Usa WHERE year > 1980.',
+    solution: 'SELECT title, year FROM books WHERE year > 1980 ORDER BY year, title;',
+    topic: 'WHERE',
+  },
+  {
+    id: 103, scenario: 'biblioteca', level: 'basico',
+    title: 'Socios de Madrid',
+    description: 'Muestra el nombre y apellido de los socios que viven en Madrid.',
+    hint: "Filtra con WHERE city = 'Madrid'.",
+    solution: "SELECT first_name, last_name FROM members WHERE city = 'Madrid' ORDER BY last_name;",
+    topic: 'WHERE con texto',
+  },
+  {
+    id: 104, scenario: 'biblioteca', level: 'intermedio',
+    title: 'Cada libro con su autor',
+    description: 'Muestra el título de cada libro junto al nombre de su autor.',
+    hint: 'JOIN entre books y authors usando author_id.',
+    solution: 'SELECT b.title, a.name AS autor FROM books b JOIN authors a ON b.author_id = a.id ORDER BY b.title;',
+    topic: 'JOIN',
+  },
+  {
+    id: 105, scenario: 'biblioteca', level: 'intermedio',
+    title: 'Número de libros por género',
+    description: 'Cuenta cuántos libros hay de cada género, de mayor a menor.',
+    hint: 'Agrupa por genre y usa COUNT(*).',
+    solution: 'SELECT genre, COUNT(*) AS total FROM books GROUP BY genre ORDER BY total DESC, genre;',
+    topic: 'GROUP BY + COUNT',
+  },
+  {
+    id: 106, scenario: 'biblioteca', level: 'intermedio',
+    title: 'Préstamos activos por socio',
+    description: 'Muestra los socios que tienen préstamos activos y cuántos tiene cada uno.',
+    hint: "JOIN members con loans filtrando status = 'activo', agrupa por socio.",
+    solution: "SELECT m.first_name, m.last_name, COUNT(l.id) AS activos FROM members m JOIN loans l ON m.id = l.member_id WHERE l.status = 'activo' GROUP BY m.id, m.first_name, m.last_name ORDER BY activos DESC, m.last_name;",
+    topic: 'JOIN + GROUP BY',
+  },
+  {
+    id: 107, scenario: 'biblioteca', level: 'avanzado',
+    title: 'Los 3 libros más prestados',
+    description: 'Muestra los 3 libros que más veces se han prestado.',
+    hint: 'JOIN books con loans, cuenta los préstamos por libro y ordena descendente con LIMIT 3.',
+    solution: 'SELECT b.title, COUNT(l.id) AS veces_prestado FROM books b JOIN loans l ON b.id = l.book_id GROUP BY b.id, b.title ORDER BY veces_prestado DESC, b.title LIMIT 3;',
+    topic: 'COUNT + GROUP BY + LIMIT',
+  },
+  {
+    id: 108, scenario: 'biblioteca', level: 'avanzado',
+    title: 'Socios que nunca han pedido un libro',
+    description: 'Encuentra los socios que no tienen ningún préstamo registrado.',
+    hint: 'LEFT JOIN de members con loans y filtra donde el préstamo es NULL.',
+    solution: 'SELECT m.first_name, m.last_name, m.email FROM members m LEFT JOIN loans l ON m.id = l.member_id WHERE l.id IS NULL ORDER BY m.last_name;',
+    topic: 'LEFT JOIN + IS NULL',
+  },
+  {
+    id: 109, scenario: 'biblioteca', level: 'avanzado',
+    title: 'Autores con más de un libro',
+    description: 'Muestra los autores que tienen más de un libro en el catálogo, con cuántos tienen.',
+    hint: 'JOIN authors con books, agrupa por autor y filtra con HAVING COUNT > 1.',
+    solution: 'SELECT a.name, COUNT(b.id) AS libros FROM authors a JOIN books b ON a.id = b.author_id GROUP BY a.id, a.name HAVING COUNT(b.id) > 1 ORDER BY libros DESC, a.name;',
+    topic: 'HAVING',
+  },
+];
+
+module.exports = exercises;

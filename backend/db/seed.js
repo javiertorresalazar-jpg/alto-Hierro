@@ -161,8 +161,19 @@ async function seed() {
         (19, 9, 5, 'Los mejores auriculares que he escuchado');
     `);
 
-    console.log('✅ Base de datos inicializada correctamente!');
-    console.log('Tablas creadas: departments, employees, categories, products, customers, orders, order_items, reviews');
+    const extraCandidates = [
+      path.join(__dirname, '..', '..', 'supabase', 'setup-extra.sql'),
+      path.join(__dirname, '..', 'supabase', 'setup-extra.sql'),
+    ];
+    const extraFile = extraCandidates.find((f) => fs.existsSync(f));
+    if (extraFile) {
+      console.log('Creando escenarios adicionales (biblioteca, hospital)...');
+      await client.query(fs.readFileSync(extraFile, 'utf8'));
+      console.log('✅ Base de datos inicializada correctamente!');
+      console.log('Escenarios: tienda (public), biblioteca, hospital');
+    } else {
+      console.log('⚠️  setup-extra.sql no encontrado; solo se cargó la tienda.');
+    }
   } catch (err) {
     console.error('Error al inicializar la base de datos:', err);
     throw err;

@@ -4,8 +4,8 @@ import { sql, PostgreSQL } from '@codemirror/lang-sql';
 import useSchema from '../hooks/useSchema';
 
 // Editor SQL con resaltado de sintaxis y autocompletado de tablas/columnas
-export default function SqlEditor({ value, onChange, onRun }) {
-  const { schema } = useSchema();
+export default function SqlEditor({ value, onChange, onRun, scenario = 'tienda', height = '160px' }) {
+  const { schema } = useSchema(scenario);
 
   const extensions = useMemo(() => {
     // Construir el mapa de tablas->columnas para el autocompletado
@@ -28,7 +28,7 @@ export default function SqlEditor({ value, onChange, onRun }) {
     <div className="sql-editor-wrapper">
       <CodeMirror
         value={value}
-        height="160px"
+        height={height}
         theme="dark"
         extensions={extensions}
         onChange={onChange}

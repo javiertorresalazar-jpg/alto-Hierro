@@ -1,9 +1,9 @@
-const exercises = require('./_lib/exercises');
+const exercises = require('./_lib/exercises-all');
 
 module.exports = (req, res) => {
-  const { level } = req.query;
-  const result = level
-    ? exercises.filter((e) => e.level === level)
-    : exercises;
+  const { level, scenario } = req.query;
+  let result = exercises;
+  if (scenario) result = result.filter((e) => e.scenario === scenario);
+  if (level) result = result.filter((e) => e.level === level);
   res.json(result.map(({ solution, ...rest }) => rest));
 };

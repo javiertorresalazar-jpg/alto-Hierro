@@ -1,0 +1,77 @@
+// Ejercicios del escenario "hospital" (schema hospital)
+const exercises = [
+  {
+    id: 201, scenario: 'hospital', level: 'basico',
+    title: 'Todos los médicos',
+    description: 'Muestra el nombre, apellido y especialidad de todos los médicos, ordenados por apellido.',
+    hint: 'SELECT de tres columnas + ORDER BY last_name.',
+    solution: 'SELECT first_name, last_name, specialty FROM doctors ORDER BY last_name;',
+    topic: 'SELECT + ORDER BY',
+  },
+  {
+    id: 202, scenario: 'hospital', level: 'basico',
+    title: 'Médicos mejor pagados',
+    description: 'Lista los médicos con salario superior a 70000, del que más gana al que menos.',
+    hint: 'WHERE salary > 70000 y ORDER BY salary DESC.',
+    solution: 'SELECT first_name, last_name, salary FROM doctors WHERE salary > 70000 ORDER BY salary DESC;',
+    topic: 'WHERE + ORDER BY',
+  },
+  {
+    id: 203, scenario: 'hospital', level: 'basico',
+    title: 'Pacientes de Madrid',
+    description: 'Muestra el nombre y apellido de los pacientes que viven en Madrid.',
+    hint: "Filtra con WHERE city = 'Madrid'.",
+    solution: "SELECT first_name, last_name FROM patients WHERE city = 'Madrid' ORDER BY last_name;",
+    topic: 'WHERE con texto',
+  },
+  {
+    id: 204, scenario: 'hospital', level: 'intermedio',
+    title: 'Médicos con su departamento',
+    description: 'Muestra cada médico junto al nombre de su departamento.',
+    hint: 'JOIN entre doctors y departments usando department_id.',
+    solution: 'SELECT d.first_name, d.last_name, dep.name AS departamento FROM doctors d JOIN departments dep ON d.department_id = dep.id ORDER BY dep.name, d.last_name;',
+    topic: 'JOIN',
+  },
+  {
+    id: 205, scenario: 'hospital', level: 'intermedio',
+    title: 'Citas por estado',
+    description: 'Cuenta cuántas citas hay de cada estado (programada, completada, cancelada).',
+    hint: 'Agrupa por status y usa COUNT(*).',
+    solution: 'SELECT status, COUNT(*) AS total FROM appointments GROUP BY status ORDER BY total DESC, status;',
+    topic: 'GROUP BY + COUNT',
+  },
+  {
+    id: 206, scenario: 'hospital', level: 'intermedio',
+    title: 'Número de médicos por departamento',
+    description: 'Muestra cada departamento con cuántos médicos tiene.',
+    hint: 'LEFT JOIN departments con doctors, agrupa por departamento.',
+    solution: 'SELECT dep.name, COUNT(d.id) AS medicos FROM departments dep LEFT JOIN doctors d ON dep.id = d.department_id GROUP BY dep.id, dep.name ORDER BY medicos DESC, dep.name;',
+    topic: 'LEFT JOIN + GROUP BY',
+  },
+  {
+    id: 207, scenario: 'hospital', level: 'avanzado',
+    title: 'Los 3 médicos con más citas',
+    description: 'Muestra los 3 médicos que tienen más citas asignadas.',
+    hint: 'JOIN doctors con appointments, cuenta por médico y ordena descendente con LIMIT 3.',
+    solution: 'SELECT d.first_name, d.last_name, COUNT(a.id) AS citas FROM doctors d JOIN appointments a ON d.id = a.doctor_id GROUP BY d.id, d.first_name, d.last_name ORDER BY citas DESC, d.last_name LIMIT 3;',
+    topic: 'COUNT + GROUP BY + LIMIT',
+  },
+  {
+    id: 208, scenario: 'hospital', level: 'avanzado',
+    title: 'Salario medio por departamento',
+    description: 'Calcula el salario promedio de los médicos de cada departamento, de mayor a menor.',
+    hint: 'JOIN departments con doctors, agrupa y usa ROUND(AVG(salary), 2).',
+    solution: 'SELECT dep.name, ROUND(AVG(d.salary), 2) AS salario_medio FROM departments dep JOIN doctors d ON dep.id = d.department_id GROUP BY dep.name ORDER BY salario_medio DESC;',
+    topic: 'AVG + GROUP BY',
+  },
+  {
+    id: 209, scenario: 'hospital', level: 'avanzado',
+    title: 'Pacientes sin ninguna cita',
+    description: 'Encuentra los pacientes que no tienen ninguna cita registrada.',
+    hint: 'LEFT JOIN patients con appointments y filtra donde la cita es NULL.',
+    solution: 'SELECT p.first_name, p.last_name, p.city FROM patients p LEFT JOIN appointments a ON p.id = a.patient_id WHERE a.id IS NULL ORDER BY p.last_name;',
+    topic: 'LEFT JOIN + IS NULL',
+  },
+];
+
+module.exports = exercises;

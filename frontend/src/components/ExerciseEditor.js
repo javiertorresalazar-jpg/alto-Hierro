@@ -3,6 +3,7 @@ import SqlEditor from './SqlEditor';
 import ResultDiff from './ResultDiff';
 import { getTheory } from '../data/theory';
 import { explainSqlError } from '../data/sqlErrors';
+import { formatSql } from '../utils/sqlTools';
 
 const LEVEL_COLORS = { basico: '#10b981', intermedio: '#f59e0b', avanzado: '#ef4444' };
 
@@ -34,7 +35,7 @@ export default function ExerciseEditor({ exercise, onBack, onComplete, isComplet
       const r = await fetch('/api/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sql }),
+        body: JSON.stringify({ sql, scenario: exercise.scenario }),
       });
       const data = await r.json();
       if (data.error) {
@@ -167,7 +168,7 @@ export default function ExerciseEditor({ exercise, onBack, onComplete, isComplet
 
       {activeTab === 'editor' && (
         <>
-          <SqlEditor value={sql} onChange={setSql} onRun={runQuery} />
+          <SqlEditor value={sql} onChange={setSql} onRun={runQuery} scenario={exercise.scenario} />
           <div style={{ fontSize: '0.72rem', color: '#64748b', margin: '4px 2px' }}>
             💡 Atajo: Ctrl/Cmd + Enter para ejecutar
           </div>
@@ -175,6 +176,7 @@ export default function ExerciseEditor({ exercise, onBack, onComplete, isComplet
           <div style={{ display: 'flex', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
             <button className="btn btn-ghost btn-sm" onClick={runQuery} disabled={loading}>▶ Ejecutar</button>
             <button className="btn btn-primary btn-sm" onClick={checkAnswer} disabled={loading}>✓ Verificar</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setSql(formatSql(sql))}>✨ Formatear</button>
             <button
               className="btn btn-ghost btn-sm"
               onClick={() => { setShowHint(!showHint); if (!solution) fetchSolution(); }}

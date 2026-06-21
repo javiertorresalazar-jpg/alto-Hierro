@@ -6,6 +6,8 @@ import SchemaViewer from './components/SchemaViewer';
 import InstallBanner from './components/InstallBanner';
 import ProgressPanel from './components/ProgressPanel';
 import Welcome from './components/Welcome';
+import ScenarioSelector from './components/ScenarioSelector';
+import Playground from './components/Playground';
 import useGameState, { getRank } from './hooks/useGameState';
 import './App.css';
 
@@ -15,24 +17,36 @@ export default function App() {
   );
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [level, setLevel] = useState('basico');
+  const [scenario, setScenario] = useState(() => localStorage.getItem('scenario') || 'tienda');
+  const [scenarios, setScenarios] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const { state, recordCompletion } = useGameState();
 
+  useEffect(() => {
+    fetch('/api/scenarios').then((r) => r.json()).then(setScenarios).catch(() => {});
+  }, []);
+
   const fetchExercises = useCallback(async () => {
+    setLoading(true);
     try {
-      const r = await fetch(`/api/exercises?level=${level}`);
-      const data = await r.json();
-      setExercises(data);
+      const r = await fetch(`/api/exercises?scenario=${scenario}&level=${level}`);
+      setExercises(await r.json());
     } catch {
       setExercises([]);
     } finally {
       setLoading(false);
     }
-  }, [level]);
+  }, [scenario, level]);
 
   useEffect(() => { fetchExercises(); }, [fetchExercises]);
+
+  const changeScenario = (id) => {
+    setScenario(id);
+    localStorage.setItem('scenario', id);
+    setSelectedExercise(null);
+  };
 
   const LEVELS = [
     { key: 'basico', label: 'Básico', color: '#10b981' },
@@ -43,7 +57,8 @@ export default function App() {
   const TABS = [
     { key: 'inicio', label: 'Inicio', icon: '🏠' },
     { key: 'ejercicios', label: 'Ejercicios', icon: '📝' },
-    { key: 'ayuda', label: 'Ayuda SQL', icon: '📖' },
+    { key: 'libre', label: 'Modo libre', icon: '🧪' },
+    { key: 'ayuda', label: 'Ayuda', icon: '📖' },
     { key: 'esquema', label: 'Base de Datos', icon: '🗄️' },
   ];
 
@@ -53,6 +68,7 @@ export default function App() {
   };
 
   const rank = getRank(state.xp).current;
+  const meta = scenarios.find((s) => s.id === scenario);
 
   return (
     <div className="app">
@@ -85,10 +101,19 @@ export default function App() {
       </nav>
 
       <main className="main">
-        {tab === 'inicio' && <Welcome onStart={goToExercises} />}
+        {tab === 'inicio' && (
+          <Welcome
+            scenarios={scenarios}
+            scenario={scenario}
+            meta={meta}
+            onSelectScenario={changeScenario}
+            onStart={goToExercises}
+          />
+        )}
 
         {tab === 'ejercicios' && !selectedExercise && (
           <>
+            <ScenarioSelector scenarios={scenarios} value={scenario} onChange={changeScenario} />
             <ProgressPanel state={state} />
             <div className="level-selector">
               {LEVELS.map((l) => (
@@ -96,7 +121,7 @@ export default function App() {
                   key={l.key}
                   className={`level-btn ${level === l.key ? 'active' : ''}`}
                   style={{ '--level-color': l.color }}
-                  onClick={() => { setLevel(l.key); setLoading(true); }}
+                  onClick={() => setLevel(l.key)}
                 >
                   {l.label}
                 </button>
@@ -123,8 +148,21 @@ export default function App() {
           />
         )}
 
+        {tab === 'libre' && (
+          <>
+            <ScenarioSelector scenarios={scenarios} value={scenario} onChange={changeScenario} />
+            <Playground scenario={scenario} />
+          </>
+        )}
+
         {tab === 'ayuda' && <CheatSheet />}
-        {tab === 'esquema' && <SchemaViewer />}
+
+        {tab === 'esquema' && (
+          <>
+            <ScenarioSelector scenarios={scenarios} value={scenario} onChange={changeScenario} />
+            <SchemaViewer scenario={scenario} meta={meta} />
+          </>
+        )}
       </main>
     </div>
   );

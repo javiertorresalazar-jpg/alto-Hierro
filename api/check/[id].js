@@ -1,5 +1,5 @@
-const { getPool } = require('../_lib/db');
-const exercises = require('../_lib/exercises');
+const { runScenarioQuery, schemaFor } = require('../_lib/db');
+const exercises = require('../_lib/exercises-all');
 
 const BLOCKED_KEYWORDS = /\b(DROP|TRUNCATE|DELETE|INSERT|UPDATE|ALTER|CREATE|GRANT|REVOKE|EXEC|EXECUTE)\b/i;
 
@@ -18,11 +18,12 @@ module.exports = async (req, res) => {
     return res.status(403).json({ error: 'Solo se permiten consultas SELECT.' });
   }
 
+  const schema = schemaFor(ex.scenario);
+
   try {
-    const pool = getPool();
     const [userResult, solutionResult] = await Promise.all([
-      pool.query(sql.trim()),
-      pool.query(ex.solution),
+      runScenarioQuery(schema, sql.trim()),
+      runScenarioQuery(schema, ex.solution),
     ]);
 
     const userRows = userResult.rows;
