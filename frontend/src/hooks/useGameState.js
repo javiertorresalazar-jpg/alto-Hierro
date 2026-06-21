@@ -153,5 +153,15 @@ export default function useGameState() {
     persist(next);
   }, [state]);
 
-  return { state, recordCompletion, setDailyExercise, recordAttempt };
+  // Reemplaza el estado completo (lo usa la sincronización con la nube
+  // tras combinar el progreso local con el de la cuenta).
+  const setFullState = useCallback((incoming) => {
+    setState((prev) => {
+      const next = { ...prev, ...incoming };
+      localStorage.setItem('gameState', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  return { state, recordCompletion, setDailyExercise, recordAttempt, setFullState };
 }

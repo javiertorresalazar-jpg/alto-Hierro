@@ -24,7 +24,7 @@ function Choice({ active, onClick, children }) {
   );
 }
 
-export default function SettingsPanel({ settings, update, onClose }) {
+export default function SettingsPanel({ settings, update, auth, onRequestLogin, onClose }) {
   return (
     <div
       onClick={onClose}
@@ -60,6 +60,27 @@ export default function SettingsPanel({ settings, update, onClose }) {
           <Choice active={settings.sound} onClick={() => update({ sound: true })}>🔊 Sí</Choice>
           <Choice active={!settings.sound} onClick={() => update({ sound: false })}>🔇 No</Choice>
         </Row>
+
+        {auth && auth.configured && (
+          <div style={{ paddingTop: 10 }}>
+            {auth.user ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Sesión iniciada</div>
+                  <div style={{ fontSize: '0.84rem', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {auth.user.email}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--success)', marginTop: 2 }}>☁️ Progreso sincronizado</div>
+                </div>
+                <button className="btn btn-ghost btn-sm" onClick={() => auth.signOut()}>Cerrar sesión</button>
+              </div>
+            ) : (
+              <button className="btn btn-primary btn-sm" style={{ width: '100%' }} onClick={onRequestLogin}>
+                🔑 Iniciar sesión para guardar mi progreso
+              </button>
+            )}
+          </div>
+        )}
 
         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 12, lineHeight: 1.5 }}>
           Tus preferencias se guardan en este dispositivo.

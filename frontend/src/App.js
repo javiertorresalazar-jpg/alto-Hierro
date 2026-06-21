@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ExerciseList from './components/ExerciseList';
 import ExerciseEditor from './components/ExerciseEditor';
 import CheatSheet from './components/CheatSheet';
@@ -13,9 +13,12 @@ import LearningPaths from './components/LearningPaths';
 import Profile from './components/Profile';
 import ExamMode from './components/ExamMode';
 import SettingsPanel from './components/SettingsPanel';
+import AuthPanel from './components/AuthPanel';
 import useGameState, { getRank, getDailyExerciseId } from './hooks/useGameState';
 import useSettings from './hooks/useSettings';
 import useExerciseMeta from './hooks/useExerciseMeta';
+import useAuth from './hooks/useAuth';
+import mergeProgress from './utils/mergeProgress';
 import './App.css';
 
 export default function App() {
@@ -30,10 +33,42 @@ export default function App() {
   const [allExercises, setAllExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
-  const { state, recordCompletion, setDailyExercise, recordAttempt } = useGameState();
+  const { state, recordCompletion, setDailyExercise, recordAttempt, setFullState } = useGameState();
   const { settings, update } = useSettings();
   const { favorites, failed, toggleFavorite, markFailed } = useExerciseMeta();
+  const auth = useAuth();
+
+  // Sincronización con la nube: al iniciar sesión, combina el progreso
+  // local con el de la cuenta y lo sube; luego va guardando los cambios.
+  const syncedRef = useRef(false);
+  const saveTimer = useRef(null);
+
+  useEffect(() => {
+    if (!auth.user) { syncedRef.current = false; return; }
+    if (syncedRef.current) return;
+    syncedRef.current = true;
+    (async () => {
+      try {
+        const cloud = await auth.fetchCloudProgress(auth.user.id);
+        const merged = mergeProgress(state, cloud || {});
+        setFullState(merged);
+        await auth.saveCloudProgress(auth.user.id, merged);
+      } catch {
+        /* si falla la sincronización, seguimos con el progreso local */
+      }
+    })();
+  }, [auth.user]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!auth.user || !syncedRef.current) return;
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      auth.saveCloudProgress(auth.user.id, state).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(saveTimer.current);
+  }, [state, auth.user]); // eslint-disable-line
 
   useEffect(() => {
     fetch('/api/scenarios').then((r) => r.json()).then(setScenarios).catch(() => {});
@@ -141,6 +176,15 @@ export default function App() {
           <div className="progress-pill" title={`${rank.name} · ${state.xp} XP`}>
             {rank.icon} {state.xp} XP
           </div>
+          {auth.configured && (
+            <button
+              onClick={() => (auth.user ? setShowSettings(true) : setShowAuth(true))}
+              title={auth.user ? auth.user.email : 'Iniciar sesión'}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.3rem', color: auth.user ? 'var(--success)' : 'var(--text-muted)' }}
+            >
+              {auth.user ? '👤' : '🔑'}
+            </button>
+          )}
           <button
             onClick={() => setShowSettings(true)}
             title="Ajustes"
@@ -281,7 +325,17 @@ export default function App() {
       </main>
 
       {showSettings && (
-        <SettingsPanel settings={settings} update={update} onClose={() => setShowSettings(false)} />
+        <SettingsPanel
+          settings={settings}
+          update={update}
+          auth={auth}
+          onRequestLogin={() => { setShowSettings(false); setShowAuth(true); }}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {showAuth && (
+        <AuthPanel auth={auth} onClose={() => setShowAuth(false)} />
       )}
     </div>
   );
