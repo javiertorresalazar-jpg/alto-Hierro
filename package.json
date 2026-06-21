@@ -1,0 +1,12 @@
+{
+  "name": "sql-trainer",
+  "version": "1.0.0",
+  "description": "App para aprender SQL PostgreSQL con ejercicios por nivel",
+  "private": true,
+  "engines": {
+    "node": "20.x"
+  },
+  "dependencies": {
+    "pg": "^8.11.5"
+  }
+}
