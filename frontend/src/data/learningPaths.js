@@ -58,4 +58,14 @@ export const PATHS = [
     color: '#06b6d4',
     requires: 'joins',
   },
+  {
+    id: 'banco',
+    title: 'Escenario: Banco',
+    icon: '🏦',
+    description: 'Analiza un banco con cuentas, movimientos y préstamos: saldos, patrimonio y morosidad.',
+    scenario: 'banco',
+    exerciseIds: [301, 302, 303, 304, 305, 306, 307, 308, 309],
+    color: '#f59e0b',
+    requires: 'avanzado',
+  },
 ];

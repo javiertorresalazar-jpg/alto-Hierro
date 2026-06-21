@@ -93,6 +93,36 @@ const scenarios = [
       { from: 'appointments', to: 'doctors', key: 'doctor_id' },
     ],
   },
+  {
+    id: 'banco',
+    schema: 'banco',
+    name: 'BancoSeguro',
+    icon: '🏦',
+    tagline: 'Banco con cuentas y préstamos',
+    market: [
+      'BancoSeguro es una entidad bancaria con varias sucursales en España. Gestiona clientes que abren cuentas corrientes y de ahorro, registra todos los movimientos (depósitos, retiros y transferencias) y concede préstamos que pueden estar activos, pagados o en mora.',
+      'Trabajas en el área de datos del banco: tu misión es analizar el negocio — qué clientes acumulan más patrimonio, qué sucursal gestiona más dinero o qué préstamos están impagados.',
+    ],
+    tables: [
+      { icon: '🏢', name: 'branches', desc: 'Las sucursales del banco y la ciudad donde están.' },
+      { icon: '👥', name: 'customers', desc: 'Los clientes, su ciudad y la fecha en que se hicieron clientes.' },
+      { icon: '💳', name: 'accounts', desc: 'Las cuentas (corriente/ahorro), su saldo, sucursal y titular.' },
+      { icon: '💸', name: 'transactions', desc: 'Los movimientos: depósitos, retiros y transferencias de cada cuenta.' },
+      { icon: '📑', name: 'loans', desc: 'Los préstamos: importe, interés y estado (activo, pagado, moroso).' },
+    ],
+    questions: [
+      '¿Qué clientes tienen más patrimonio?',
+      '¿Qué sucursal gestiona más dinero?',
+      '¿Qué préstamos están en mora?',
+      '¿Cuántas cuentas hay de cada tipo?',
+    ],
+    relations: [
+      { from: 'accounts', to: 'customers', key: 'customer_id' },
+      { from: 'accounts', to: 'branches', key: 'branch_id' },
+      { from: 'transactions', to: 'accounts', key: 'account_id' },
+      { from: 'loans', to: 'customers', key: 'customer_id' },
+    ],
+  },
 ];
 
 module.exports = scenarios;

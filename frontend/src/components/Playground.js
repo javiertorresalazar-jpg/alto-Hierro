@@ -10,6 +10,7 @@ const EXAMPLES = {
   tienda: 'SELECT name, price FROM products ORDER BY price DESC LIMIT 5;',
   biblioteca: 'SELECT title, year FROM books ORDER BY year DESC LIMIT 5;',
   hospital: 'SELECT first_name, last_name, salary FROM doctors ORDER BY salary DESC;',
+  banco: 'SELECT account_type, balance FROM accounts ORDER BY balance DESC LIMIT 5;',
 };
 
 export default function Playground({ scenario }) {
