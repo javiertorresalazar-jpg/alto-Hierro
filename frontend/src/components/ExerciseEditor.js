@@ -5,10 +5,15 @@ import ResultChart from './ResultChart';
 import { getTheory } from '../data/theory';
 import { explainSqlError } from '../data/sqlErrors';
 import { formatSql } from '../utils/sqlTools';
+import { analyzeQuery } from '../utils/queryAnalyzer';
+import { fireConfetti, fireRankUp, playSuccess, playLevelUp } from '../utils/celebrate';
 
 const LEVEL_COLORS = { basico: '#10b981', intermedio: '#f59e0b', avanzado: '#ef4444' };
 
-export default function ExerciseEditor({ exercise, onBack, onComplete, isCompleted }) {
+export default function ExerciseEditor({
+  exercise, onBack, onComplete, isCompleted,
+  recordAttempt, onFailed, isFavorite, onToggleFavorite, soundEnabled = true,
+}) {
   const [sql, setSql] = useState('');
   const [result, setResult] = useState(null);
   const [diff, setDiff] = useState(null);
@@ -19,6 +24,7 @@ export default function ExerciseEditor({ exercise, onBack, onComplete, isComplet
   const [solution, setSolution] = useState(null);
   const [reward, setReward] = useState(null);
   const [activeTab, setActiveTab] = useState('editor');
+  const [analysis, setAnalysis] = useState(null);
 
   const theory = getTheory(exercise.topic);
 
@@ -67,11 +73,22 @@ export default function ExerciseEditor({ exercise, onBack, onComplete, isComplet
       if (data.error) {
         handleError(data.error);
       } else if (data.correct) {
+        if (recordAttempt) recordAttempt(true);
         setFeedback({ type: 'success', text: data.feedback });
         setResult({ rows: data.userRows, fields: data.userFields, rowCount: data.rowCount });
+        runAnalysis();
         const rw = onComplete();
-        if (rw && !rw.alreadyDone) setReward(rw);
+        if (rw && !rw.alreadyDone) {
+          setReward(rw);
+          fireConfetti();
+          if (rw.leveledUp) { fireRankUp(); playLevelUp(soundEnabled); }
+          else playSuccess(soundEnabled);
+        } else {
+          playSuccess(soundEnabled);
+        }
       } else {
+        if (recordAttempt) recordAttempt(false);
+        if (onFailed) onFailed(exercise.id);
         setFeedback({ type: 'warning', text: data.feedback });
         setResult({ rows: data.userRows, fields: data.userFields, rowCount: data.rowCount });
         setDiff({
@@ -93,6 +110,16 @@ export default function ExerciseEditor({ exercise, onBack, onComplete, isComplet
     const r = await fetch(`/api/hint/${exercise.id}`);
     const data = await r.json();
     setSolution(data.solution);
+    return data.solution;
+  };
+
+  const runAnalysis = async () => {
+    try {
+      const sol = solution || (await fetchSolution());
+      if (sol) setAnalysis(analyzeQuery(sql, sol));
+    } catch {
+      /* el análisis es opcional */
+    }
   };
 
   const hasChart = result && result.rows && result.rows.length > 0;
@@ -111,15 +138,26 @@ export default function ExerciseEditor({ exercise, onBack, onComplete, isComplet
       </button>
 
       <div className="card" style={{ marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-          <span className="tag" style={{ background: LEVEL_COLORS[exercise.level] + '22', color: LEVEL_COLORS[exercise.level] }}>
-            {exercise.level}
-          </span>
-          <span className="tag tag-topic">{exercise.topic}</span>
-          {isCompleted && <span className="tag" style={{ background: '#052e16', color: '#4ade80' }}>✓ Completado</span>}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+            <span className="tag" style={{ background: LEVEL_COLORS[exercise.level] + '22', color: LEVEL_COLORS[exercise.level] }}>
+              {exercise.level}
+            </span>
+            <span className="tag tag-topic">{exercise.topic}</span>
+            {isCompleted && <span className="tag" style={{ background: '#052e16', color: '#4ade80' }}>✓ Completado</span>}
+          </div>
+          {onToggleFavorite && (
+            <button
+              onClick={() => onToggleFavorite(exercise.id)}
+              title={isFavorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.3rem', lineHeight: 1, flexShrink: 0 }}
+            >
+              {isFavorite ? '⭐' : '☆'}
+            </button>
+          )}
         </div>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>{exercise.title}</h2>
-        <p style={{ color: '#94a3b8', fontSize: '0.88rem', lineHeight: 1.5 }}>{exercise.description}</p>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8, color: 'var(--text)' }}>{exercise.title}</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.5 }}>{exercise.description}</p>
       </div>
 
       {theory && (
@@ -223,6 +261,25 @@ export default function ExerciseEditor({ exercise, onBack, onComplete, isComplet
             <div className={`feedback ${feedback.type === 'success' ? 'success' : feedback.type === 'warning' ? 'info' : 'error'}`} style={{ marginTop: 8 }}>
               {feedback.text}
               {feedback.raw && <div style={{ fontSize: '0.72rem', opacity: 0.7, marginTop: 4 }}>({feedback.raw})</div>}
+            </div>
+          )}
+
+          {analysis && analysis.length > 0 && (
+            <div className="card" style={{ marginTop: 10, borderLeft: '3px solid #8b5cf6' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#a78bfa', marginBottom: 6 }}>
+                🧠 Análisis de tu consulta
+              </div>
+              {analysis.map((tip, i) => (
+                <div
+                  key={i}
+                  style={{
+                    fontSize: '0.82rem', lineHeight: 1.5, marginBottom: i < analysis.length - 1 ? 6 : 0,
+                    color: tip.type === 'success' ? '#86efac' : tip.type === 'warning' ? '#fcd34d' : '#cbd5e1',
+                  }}
+                >
+                  {tip.type === 'success' ? '✓' : tip.type === 'warning' ? '⚠️' : 'ℹ️'} {tip.text}
+                </div>
+              ))}
             </div>
           )}
         </>

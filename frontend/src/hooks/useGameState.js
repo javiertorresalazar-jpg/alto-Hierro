@@ -65,6 +65,9 @@ export default function useGameState() {
       badges: saved.badges || [],
       dailyDate: saved.dailyDate || null,
       dailyDone: saved.dailyDone || false,
+      attempts: saved.attempts || 0,
+      correctChecks: saved.correctChecks || 0,
+      byTopic: saved.byTopic || {},
     };
   });
 
@@ -72,6 +75,19 @@ export default function useGameState() {
     localStorage.setItem('gameState', JSON.stringify(next));
     setState(next);
   };
+
+  // Registra cada intento de verificación (para calcular precisión)
+  const recordAttempt = useCallback((correct) => {
+    setState((prev) => {
+      const next = {
+        ...prev,
+        attempts: prev.attempts + 1,
+        correctChecks: prev.correctChecks + (correct ? 1 : 0),
+      };
+      localStorage.setItem('gameState', JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   // Devuelve info de lo que cambió: { xpGained, newBadges, leveledUp }
   const recordCompletion = useCallback((exercise) => {
@@ -98,12 +114,19 @@ export default function useGameState() {
       [exercise.level]: (state.byLevel[exercise.level] || 0) + 1,
     };
 
+    const byTopic = {
+      ...state.byTopic,
+      [exercise.topic]: (state.byTopic[exercise.topic] || 0) + 1,
+    };
+
     const isDailyExercise = state.dailyDate === today && !state.dailyDone;
 
     const candidate = {
+      ...state,
       xp: newXp,
       completed: [...state.completed, exercise.id],
       byLevel,
+      byTopic,
       streak,
       lastDay: today,
       badges: state.badges,
@@ -130,5 +153,5 @@ export default function useGameState() {
     persist(next);
   }, [state]);
 
-  return { state, recordCompletion, setDailyExercise };
+  return { state, recordCompletion, setDailyExercise, recordAttempt };
 }

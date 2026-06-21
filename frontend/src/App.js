@@ -10,7 +10,12 @@ import ScenarioSelector from './components/ScenarioSelector';
 import Playground from './components/Playground';
 import DailyChallenge from './components/DailyChallenge';
 import LearningPaths from './components/LearningPaths';
+import Profile from './components/Profile';
+import ExamMode from './components/ExamMode';
+import SettingsPanel from './components/SettingsPanel';
 import useGameState, { getRank, getDailyExerciseId } from './hooks/useGameState';
+import useSettings from './hooks/useSettings';
+import useExerciseMeta from './hooks/useExerciseMeta';
 import './App.css';
 
 export default function App() {
@@ -24,8 +29,11 @@ export default function App() {
   const [exercises, setExercises] = useState([]);
   const [allExercises, setAllExercises] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
 
-  const { state, recordCompletion, setDailyExercise } = useGameState();
+  const { state, recordCompletion, setDailyExercise, recordAttempt } = useGameState();
+  const { settings, update } = useSettings();
+  const { favorites, failed, toggleFavorite, markFailed } = useExerciseMeta();
 
   useEffect(() => {
     fetch('/api/scenarios').then((r) => r.json()).then(setScenarios).catch(() => {});
@@ -82,7 +90,9 @@ export default function App() {
     { key: 'inicio', label: 'Inicio', icon: '🏠' },
     { key: 'ejercicios', label: 'Ejercicios', icon: '📝' },
     { key: 'rutas', label: 'Rutas', icon: '🗺️' },
-    { key: 'libre', label: 'Modo libre', icon: '🧪' },
+    { key: 'examen', label: 'Examen', icon: '⏱️' },
+    { key: 'libre', label: 'Libre', icon: '🧪' },
+    { key: 'perfil', label: 'Perfil', icon: '👤' },
     { key: 'ayuda', label: 'Ayuda', icon: '📖' },
     { key: 'esquema', label: 'BD', icon: '🗄️' },
   ];
@@ -94,6 +104,26 @@ export default function App() {
 
   const rank = getRank(state.xp).current;
   const meta = scenarios.find((s) => s.id === scenario);
+
+  const renderEditor = () => (
+    <ExerciseEditor
+      exercise={selectedExercise}
+      onBack={() => setSelectedExercise(null)}
+      onComplete={() => recordCompletion(selectedExercise)}
+      isCompleted={state.completed.includes(selectedExercise.id)}
+      recordAttempt={recordAttempt}
+      onFailed={markFailed}
+      isFavorite={favorites.includes(selectedExercise.id)}
+      onToggleFavorite={toggleFavorite}
+      soundEnabled={settings.sound}
+    />
+  );
+
+  const openExercise = (ex) => {
+    const sc = ex.scenario || 'tienda';
+    if (sc !== scenario) changeScenario(sc);
+    setSelectedExercise(ex);
+  };
 
   return (
     <div className="app">
@@ -107,8 +137,17 @@ export default function App() {
             <p>PostgreSQL · Aprende con ejercicios</p>
           </div>
         </div>
-        <div className="progress-pill" title={`${rank.name} · ${state.xp} XP`}>
-          {rank.icon} {state.xp} XP
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="progress-pill" title={`${rank.name} · ${state.xp} XP`}>
+            {rank.icon} {state.xp} XP
+          </div>
+          <button
+            onClick={() => setShowSettings(true)}
+            title="Ajustes"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.3rem', color: 'var(--text-muted)' }}
+          >
+            ⚙️
+          </button>
         </div>
       </header>
 
@@ -145,11 +184,7 @@ export default function App() {
               <DailyChallenge
                 exercise={dailyExercise}
                 completed={isDailyDone}
-                onSelect={(ex) => {
-                  const sc = ex.scenario || 'tienda';
-                  if (sc !== scenario) changeScenario(sc);
-                  setSelectedExercise(ex);
-                }}
+                onSelect={openExercise}
               />
             )}
 
@@ -200,34 +235,33 @@ export default function App() {
           </>
         )}
 
-        {tab === 'ejercicios' && selectedExercise && (
-          <ExerciseEditor
-            exercise={selectedExercise}
-            onBack={() => setSelectedExercise(null)}
-            onComplete={() => recordCompletion(selectedExercise)}
-            isCompleted={state.completed.includes(selectedExercise.id)}
-          />
-        )}
+        {tab === 'ejercicios' && selectedExercise && renderEditor()}
 
         {tab === 'rutas' && !selectedExercise && (
           <LearningPaths
             completedIds={state.completed}
             allExercises={allExercises}
-            onSelectExercise={(ex) => {
-              setSelectedExercise(ex);
-            }}
+            onSelectExercise={setSelectedExercise}
             onChangeScenario={changeScenario}
           />
         )}
 
-        {tab === 'rutas' && selectedExercise && (
-          <ExerciseEditor
-            exercise={selectedExercise}
-            onBack={() => setSelectedExercise(null)}
-            onComplete={() => recordCompletion(selectedExercise)}
-            isCompleted={state.completed.includes(selectedExercise.id)}
+        {tab === 'rutas' && selectedExercise && renderEditor()}
+
+        {tab === 'examen' && <ExamMode allExercises={allExercises} />}
+
+        {tab === 'perfil' && !selectedExercise && (
+          <Profile
+            state={state}
+            favorites={favorites}
+            failed={failed}
+            allExercises={allExercises}
+            onSelectExercise={setSelectedExercise}
+            onChangeScenario={changeScenario}
           />
         )}
+
+        {tab === 'perfil' && selectedExercise && renderEditor()}
 
         {tab === 'libre' && (
           <>
@@ -245,6 +279,10 @@ export default function App() {
           </>
         )}
       </main>
+
+      {showSettings && (
+        <SettingsPanel settings={settings} update={update} onClose={() => setShowSettings(false)} />
+      )}
     </div>
   );
 }
